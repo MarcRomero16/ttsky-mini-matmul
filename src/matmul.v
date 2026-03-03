@@ -13,14 +13,14 @@ module matmul (
 );
 
 // Accumulators values
-logic [15:0] acc1, acc2, acc3, acc4;
+reg [15:0] acc1, acc2, acc3, acc4;
 
 // Registers to hold previous inputs
-logic [7:0] a_reg_top, a_reg_bot;
-logic [7:0] b_reg_left, b_reg_right;
+reg [7:0] a_reg_top, a_reg_bot;
+reg [7:0] b_reg_left, b_reg_right;
 
-always_ff @(posedge clk) begin : DFF
-    if (reset | start) begin // If restart or start, clear matmul
+always @(posedge clk) begin
+    if (reset || start) begin // If restart or start, clear matmul
         acc1 <= 16'd0;
         acc2 <= 16'd0;
         acc3 <= 16'd0;
