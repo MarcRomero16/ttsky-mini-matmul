@@ -6,7 +6,28 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v matmul.v
+PROJECT_SOURCES = tt_um_marcromero16_matmul.v matmul.v
+
+# Which test setup to use:
+#   top  = Tiny Tapeout wrapper test (default)
+#   core = matmul module test
+TEST_MODE ?= top
+
+# Helper targets so you can run:
+#   make -B        -> top-level wrapper test
+#   make -B core   -> matmul core test
+.PHONY: core top
+core:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) TEST_MODE=core sim
+
+top:
+	$(MAKE) -f $(firstword $(MAKEFILE_LIST)) TEST_MODE=top sim
+
+ifneq ($(TEST_MODE),core)
+
+# -----------------------------
+# Top-level Tiny Tapeout test
+# -----------------------------
 
 ifneq ($(GATES),yes)
 
@@ -36,10 +57,31 @@ COMPILE_ARGS 		+= -I$(SRC_DIR)
 
 # Include the testbench sources:
 VERILOG_SOURCES += $(PWD)/tb.v
-TOPLEVEL = matmul
+TOPLEVEL = tb
 
 # List test modules to run, separated by commas and without the .py suffix:
+COCOTB_TEST_MODULES = test
+
+else
+
+# -----------------------------
+# Matmul-only test
+# -----------------------------
+
+SIM_BUILD = sim_build/core
+
+# Only compile the raw matmul module
+VERILOG_SOURCES += $(SRC_DIR)/matmul.v
+
+COMPILE_ARGS += -I$(SRC_DIR)
+
+# Top-level is the actual DUT module
+TOPLEVEL = matmul
+
+# Run only the core cocotb test
 COCOTB_TEST_MODULES = matmul_tb
+
+endif
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
