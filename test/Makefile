@@ -6,7 +6,7 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_marcromero16_matmul.v matmul.v
+PROJECT_SOURCES = tt_um_marcromero16_matmul.v matmul.v controller.v
 
 # Which test setup to use:
 #   top  = Tiny Tapeout wrapper test (default)

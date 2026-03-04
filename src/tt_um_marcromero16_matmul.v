@@ -16,68 +16,127 @@ module tt_um_marcromero16_matmul (
     input  wire       rst_n     // reset_n - low to reset
 );
 
-  // Internal storage for one wave of streamed inputs
-  reg [7:0] a1, a2, b1, b2;
+  wire reset;
+  wire load;
+  wire start;
 
-  wire [15:0] c1, c2, c3, c4;
-  wire reset = ~rst_n;
-  wire start = uio_in[2];
+  assign reset = ~rst_n;
+  assign load  = uio_in[3];
+  assign start = uio_in[4];
 
-  // Load selected input register from ui_in
-  // uio_in[1:0]:
-  // 00 -> a1
-  // 01 -> a2
-  // 10 -> b1
-  // 11 -> b2
+  // Stored matrix A values
+  reg [7:0] A00;
+  reg [7:0] A01;
+  reg [7:0] A10;
+  reg [7:0] A11;
+
+  // Stored matrix B values
+  reg [7:0] B00;
+  reg [7:0] B01;
+  reg [7:0] B10;
+  reg [7:0] B11;
+
+  // Controller outputs that feed the systolic array
+  wire [7:0] feed_a1;
+  wire [7:0] feed_a2;
+  wire [7:0] feed_b1;
+  wire [7:0] feed_b2;
+
+  wire running;
+  wire done;
+
+  // Matmul outputs
+  wire [15:0] c1;
+  wire [15:0] c2;
+  wire [15:0] c3;
+  wire [15:0] c4;
+
+  // Selected output for readback
+  wire [15:0] selected_c;
+
+  // Load matrix registers from ui_in
+  // uio_in[2:0] picks which one to load
   always @(posedge clk) begin
     if (reset) begin
-      a1 <= 8'd0;
-      a2 <= 8'd0;
-      b1 <= 8'd0;
-      b2 <= 8'd0;
-    end else begin
-      case (uio_in[1:0])
-        2'b00: a1 <= ui_in;
-        2'b01: a2 <= ui_in;
-        2'b10: b1 <= ui_in;
-        2'b11: b2 <= ui_in;
+      A00 <= 8'd0;
+      A01 <= 8'd0;
+      A10 <= 8'd0;
+      A11 <= 8'd0;
+      B00 <= 8'd0;
+      B01 <= 8'd0;
+      B10 <= 8'd0;
+      B11 <= 8'd0;
+    end else if (load) begin
+      case (uio_in[2:0])
+        3'b000: A00 <= ui_in;
+        3'b001: A01 <= ui_in;
+        3'b010: A10 <= ui_in;
+        3'b011: A11 <= ui_in;
+        3'b100: B00 <= ui_in;
+        3'b101: B01 <= ui_in;
+        3'b110: B10 <= ui_in;
+        3'b111: B11 <= ui_in;
       endcase
     end
   end
 
-  matmul matmul_inst (
-    .clk      (clk),
-    .reset    (reset),
-    .start    (start),
-    .A_cell_1 (a1),
-    .A_cell_2 (a2),
-    .B_cell_1 (b1),
-    .B_cell_2 (b2),
-    .out1     (c1),
-    .out2     (c2),
-    .out3     (c3),
-    .out4     (c4)
+  // Controller sends the correct inputs each cycle
+  controller controller_inst (
+    .clk(clk),
+    .reset(reset),
+    .start(start),
+
+    .A00(A00),
+    .A01(A01),
+    .A10(A10),
+    .A11(A11),
+
+    .B00(B00),
+    .B01(B01),
+    .B10(B10),
+    .B11(B11),
+
+    .a1(feed_a1),
+    .a2(feed_a2),
+    .b1(feed_b1),
+    .b2(feed_b2),
+
+    .running(running),
+    .done(done)
   );
 
-  // Readback mux:
-  // uio_in[5:4] chooses c1/c2/c3/c4
-  // uio_in[3]   chooses low byte (0) or high byte (1)
+  // Systolic matrix multiplier core
+  matmul matmul_inst (
+    .clk(clk),
+    .reset(reset),
+    .start(start),
 
-  wire [15:0] selected_c;
+    .A_cell_1(feed_a1),
+    .A_cell_2(feed_a2),
+    .B_cell_1(feed_b1),
+    .B_cell_2(feed_b2),
 
+    .out1(c1),
+    .out2(c2),
+    .out3(c3),
+    .out4(c4)
+  );
+
+  // Pick which output word to read
   assign selected_c =
-      (uio_in[5:4] == 2'b00) ? c1 :
-      (uio_in[5:4] == 2'b01) ? c2 :
-      (uio_in[5:4] == 2'b10) ? c3 :
-                              c4;
+      (uio_in[6:5] == 2'b00) ? c1 :
+      (uio_in[6:5] == 2'b01) ? c2 :
+      (uio_in[6:5] == 2'b10) ? c3 :
+                               c4;
 
-  assign uo_out = uio_in[3] ? selected_c[15:8] : selected_c[7:0];
+  // uio_in[7] picks low byte or high byte
+  assign uo_out = (uio_in[7]) ? selected_c[15:8] : selected_c[7:0];
 
-  // We are not driving bidirectional pins in this version
+  // Not using bidirectional pins as outputs
   assign uio_out = 8'h00;
   assign uio_oe  = 8'h00;
 
-  // Mark unused signal(s)
-  wire _unused = &{ena, uio_in[7:6], 1'b0};
+  // Prevent unused warnings
+  wire _unused = &{ena, running, done, 1'b0};
 
 endmodule

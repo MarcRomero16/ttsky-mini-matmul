@@ -8,7 +8,7 @@ project:
   clock_hz:     100000000       # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  tiles: "2x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_marcromero16_matmul"
@@ -19,6 +19,7 @@ project:
   source_files:
     - "tt_um_marcromero16_matmul.v"
     - "matmul.v"
+    - "controller.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
@@ -46,12 +47,12 @@ pinout:
   # Bidirectional pins
   uio[0]: "REG_SEL[0]"
   uio[1]: "REG_SEL[1]"
-  uio[2]: "START"
-  uio[3]: "BYTE_SEL"
-  uio[4]: "OUT_SEL[0]"
-  uio[5]: "OUT_SEL[1]"
-  uio[6]: ""
-  uio[7]: ""
+  uio[2]: "REG_SEL[2]"
+  uio[3]: "LOAD"
+  uio[4]: "START"
+  uio[5]: "OUT_SEL[0]"
+  uio[6]: "OUT_SEL[1]"
+  uio[7]: "BYTE_SEL"
 
 # Do not change!
 yaml_version: 6
