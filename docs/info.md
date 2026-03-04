@@ -14,9 +14,9 @@ This project is a small **2×2 streaming matrix multiplier** written in Verilog.
 The design is split into two parts:
 
 - **`matmul.v`**: the actual matrix multiplication core  
-- **`project.v`**: the Tiny Tapeout top-level wrapper  
+- **`tt_um_marcromero16_matmul.v`**: the Tiny Tapeout top-level wrapper  
 
-The `matmul.v` module handles the multiply-and-accumulate logic for the matrix multiplication itself. The `project.v` module is the required Tiny Tapeout wrapper that connects my design to the standard Tiny Tapeout input and output pins.
+The `matmul.v` module handles the multiply-and-accumulate logic for the matrix multiplication itself. The `tt_um_marcromero16_matmul.v` module is the required Tiny Tapeout wrapper that connects my design to the standard Tiny Tapeout input and output pins.
 
 For the wrapper, I use:
 
@@ -65,7 +65,7 @@ The testbench includes:
 - reset tests
 - randomized test cases compared against a software-computed expected result
 
-I believe this is enough to test the core because it checks both normal behavior and edge cases. It does not just test one example — it also checks reset behavior, repeated operations, overflow/truncation, and many random input combinations.
+I believe this is enough to test the core because it checks both normal behavior and edge cases. It does not just test one example but it also checks reset behavior, repeated operations, overflow/truncation, and many random input combinations.
 
 ### 2. Top-level wrapper testing
 
